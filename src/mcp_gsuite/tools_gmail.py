@@ -25,14 +25,14 @@ class QueryEmailsToolHandler(toolhandler.ToolHandler):
     def get_tool_description(self) -> Tool:
         return Tool(
             name=self.name,
-            description="""Query Gmail emails based on an optional search query. 
+            description="""Query Gmail emails based on an optional search query.
             Returns emails in reverse chronological order (newest first).
             Returns metadata such as subject and also a short summary of the content.
             """,
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "query": {
                         "type": "string",
                         "description": """Gmail search query (optional). Examples:
@@ -42,7 +42,7 @@ class QueryEmailsToolHandler(toolhandler.ToolHandler):
                             - 'newer_than:2d' for emails from last 2 days
                             - 'has:attachment' for emails with attachments
                             If not provided, returns recent emails without filtering.""",
-                        "required": False
+                        "default": ""
                     },
                     "max_results": {
                         "type": "integer",
@@ -52,7 +52,7 @@ class QueryEmailsToolHandler(toolhandler.ToolHandler):
                         "default": 100
                     }
                 },
-                "required": [toolhandler.USER_ID_ARG]
+                "required": ["user_id__"]
             }
         )
 
@@ -85,13 +85,13 @@ class GetEmailByIdToolHandler(toolhandler.ToolHandler):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "email_id": {
                         "type": "string",
                         "description": "The ID of the Gmail message to retrieve"
                     }
                 },
-                "required": ["email_id", toolhandler.USER_ID_ARG]
+                "required": ["email_id", "user_id__"]
             }
         )
 
@@ -133,7 +133,7 @@ class BulkGetEmailsByIdsToolHandler(toolhandler.ToolHandler):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "email_ids": {
                         "type": "array",
                         "items": {
@@ -142,7 +142,7 @@ class BulkGetEmailsByIdsToolHandler(toolhandler.ToolHandler):
                         "description": "List of Gmail message IDs to retrieve"
                     }
                 },
-                "required": ["email_ids", toolhandler.USER_ID_ARG]
+                "required": ["email_ids", "user_id__"]
             }
         )
 
@@ -154,7 +154,7 @@ class BulkGetEmailsByIdsToolHandler(toolhandler.ToolHandler):
         if not user_id:
             raise RuntimeError(f"Missing required argument: {toolhandler.USER_ID_ARG}")
         gmail_service = gmail.GmailService(user_id=user_id)
-        
+
         results = []
         for email_id in args["email_ids"]:
             email, attachments = gmail_service.get_email_by_id_with_attachments(email_id)
@@ -185,14 +185,14 @@ class CreateDraftToolHandler(toolhandler.ToolHandler):
         return Tool(
             name=self.name,
             description="""Creates a draft email message from scratch in Gmail with specified recipient, subject, body, and optional CC recipients.
-            
+
             Do NOT use this tool when you want to draft or send a REPLY to an existing message. This tool does NOT include any previous message content. Use the reply_gmail_email tool
             with send=False instead."
             """,
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "to": {
                         "type": "string",
                         "description": "Email address of the recipient"
@@ -213,7 +213,7 @@ class CreateDraftToolHandler(toolhandler.ToolHandler):
                         "description": "Optional list of email addresses to CC"
                     }
                 },
-                "required": ["to", "subject", "body", toolhandler.USER_ID_ARG]
+                "required": ["to", "subject", "body", "user_id__"]
             }
         )
 
@@ -259,13 +259,13 @@ class DeleteDraftToolHandler(toolhandler.ToolHandler):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "draft_id": {
                         "type": "string",
                         "description": "The ID of the draft to delete"
                     }
                 },
-                "required": ["draft_id", toolhandler.USER_ID_ARG]
+                "required": ["draft_id", "user_id__"]
             }
         )
 
@@ -300,7 +300,7 @@ class ReplyEmailToolHandler(toolhandler.ToolHandler):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "original_message_id": {
                         "type": "string",
                         "description": "The ID of the Gmail message to reply to"
@@ -322,7 +322,7 @@ class ReplyEmailToolHandler(toolhandler.ToolHandler):
                         "description": "Optional list of email addresses to CC on the reply"
                     }
                 },
-                "required": ["original_message_id", "reply_body", toolhandler.USER_ID_ARG]
+                "required": ["original_message_id", "reply_body", "user_id__"]
             }
         )
 
@@ -334,7 +334,7 @@ class ReplyEmailToolHandler(toolhandler.ToolHandler):
         if not user_id:
             raise RuntimeError(f"Missing required argument: {toolhandler.USER_ID_ARG}")
         gmail_service = gmail.GmailService(user_id=user_id)
-        
+
         # First get the original message to extract necessary information
         original_message = gmail_service.get_email_by_id(args["original_message_id"])
         if original_message is None:
@@ -379,7 +379,7 @@ class GetAttachmentToolHandler(toolhandler.ToolHandler):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "message_id": {
                         "type": "string",
                         "description": "The ID of the Gmail message containing the attachment"
@@ -401,7 +401,7 @@ class GetAttachmentToolHandler(toolhandler.ToolHandler):
                         "description": "The fullpath to save the attachment to disk. If not provided, the attachment is returned as a resource."
                     }
                 },
-                "required": ["message_id", "attachment_id", "mime_type", "filename", toolhandler.USER_ID_ARG]
+                "required": ["message_id", "attachment_id", "mime_type", "filename", "user_id__"]
             }
         )
 
@@ -464,7 +464,7 @@ class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "__user_id__": self.get_user_id_arg_schema(),
+                    "user_id__": self.get_user_id_arg_schema(),
                     "attachments": {
                         "type": "array",
                         "items": {
@@ -475,7 +475,7 @@ class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
                                     "description": "ID of the Gmail message containing the attachment"
                                 },
                                 "part_id": {
-                                    "type": "string", 
+                                    "type": "string",
                                     "description": "ID of the part containing the attachment"
                                 },
                                 "save_path": {
@@ -487,7 +487,7 @@ class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
                         }
                     }
                 },
-                "required": ["attachments", toolhandler.USER_ID_ARG]
+                "required": ["attachments", "user_id__"]
             }
         )
 
@@ -518,7 +518,7 @@ class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
             # get attachment_id from part_id
             attachment_id = attachments[attachment_info["part_id"]]["attachmentId"]
             attachment_data = gmail_service.get_attachment(
-                attachment_info["message_id"], 
+                attachment_info["message_id"],
                 attachment_id
             )
             if attachment_data is None:
@@ -531,7 +531,7 @@ class BulkSaveAttachmentsToolHandler(toolhandler.ToolHandler):
                 continue
 
             file_data = attachment_data["data"]
-            try:    
+            try:
                 decoded_data = decode_base64_data(file_data)
                 with open(attachment_info["save_path"], "wb") as f:
                     f.write(decoded_data)

@@ -8,7 +8,7 @@ from mcp.types import (
 
 from . import gauth
 
-USER_ID_ARG = "__user_id__"
+USER_ID_ARG = "user_id__"
 
 class ToolHandler():
     def __init__(self, tool_name: str):
@@ -16,8 +16,8 @@ class ToolHandler():
 
     def get_account_descriptions(self) -> list[str]:
         return [a.to_description() for a in gauth.get_account_info()]
-    
-    # we ingest this information into every tool that requires a specified __user_id__. 
+
+    # we ingest this information into every tool that requires a specified __user_id__.
     # we also add what information actually can be used (account info). This way Claude
     # will know what to do.
     def get_supported_emails_tool_text(self) -> str:
